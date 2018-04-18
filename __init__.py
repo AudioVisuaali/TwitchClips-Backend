@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, session, make_response
+from utils import headers_check, cookies_check, session_check
 from database import Database
-from utils import headers
 import config
 
 database = Database()
@@ -16,8 +16,10 @@ def remote_addr():
     return jsonify({'remote_address': request.remote_addr,"user_agent": request.user_agent.string}), 200
 
 @app.route('/user/create', methods=['GET'])
-@headers(["username", "password"])
+@headers_check(["username", "password"])
 def create_user():
+
+    args = request.args
 
     state, msg = database.user.create(args["username"], args["password"])
 
@@ -27,8 +29,10 @@ def create_user():
     return jsonify({'state': "success"}), 200
 
 @app.route('/user/login', methods=['GET'])
-@headers(["username", "password"])
+@headers_check(["username", "password"])
 def login_user():
+
+    args = request.args
 
     thing = database.user.login(args["username"], args["password"], request.remote_addr, request.user_agent.string)
 
@@ -45,33 +49,26 @@ def login_user():
     return resp, 200
 
 @app.route('/user/check_session', methods=['GET'])
-@headers(["session", "user"])
+@cookies_check(["user", "session"])
 def check_session():
+    cookies = request.cookies
 
     remote_addr = request.remote_addr
     user_agent = request.user_agent.string
-    user_id = request.cookies["user"]
-    session_hash = request.cookies["session"]
+    user_id = cookies["user"]
+    session_hash = cookies["session"]
 
-    user = database.user.get_by_id(user_id)
+    state, msg = database.user_logged_in(remote_addr, user_agent, user_id, session_hash)
 
-    if not user:
-        return jsonify({'error': "no user"}), 400
+    if not state:
+        return jsonify({'error': msg}), 400
 
-    sessions = database.sess.get(user.id)
-
-    for session in sessions:
-
-        hash_ = database.user.hash_(remote_addr + user_agent, session.session_salt)
-
-        if hash_ == session_hash:
-            return jsonify({'session': "active"}), 200
-
-    return jsonify({'session': "no session"}), 400
+    return jsonify({'session': msg}), 200
 
 @app.route('/user/logout_one', methods=['GET'])
-@headers(["session", "user"])
+@cookies_check(["session", "user"])
 def logout_user():
+    cookies = request.cookies
 
     def create_res(error, state):
         resp = jsonify({'error': error})
@@ -82,10 +79,8 @@ def logout_user():
 
     remote_addr = request.remote_addr
     user_agent = request.user_agent.string
-    user_id = request.cookies["user"]
-    session_hash = request.cookies["session"]
 
-    user = database.user.get_by_id(user_id)
+    user = database.user.get_by_id(cookies["user"])
 
     if not user:
         return create_res("no user", 400)
@@ -99,22 +94,30 @@ def logout_user():
 
         hash_ = database.user.hash_(remote_addr + user_agent, session.session_salt)
 
-        if hash_ == session_hash:
+        if hash_ == cookies["session"]:
             database.sess.remove_one(session.session_salt)
             return create_res("removed", 200)
 
     return create_res("no session", 400)
 
 @app.route('/clip/add', methods=['GET'])
-@headers(["username", "clip_channel_name", "clip_title", "clip_identifier", "clip_thumbnail"])
-def add_clip():
+@session_check(database)
+@headers_check(["clip_channel_name", "clip_title", "clip_identifier", "clip_thumbnail"])
+def clip_Add():
 
-    thing = database.user.get(args["username"])
+    args = request.args
 
-    if not thing:
+    user = database.user.get_by_id(request.cookies["user"])
+
+    if not user:
         return jsonify({'error': 'User not found'}), 400
 
-    state, error = database.clip.add(thing, args["clip_channel_name"], args["clip_title"], args["clip_identifier"], args["clip_thumbnail"])
+    clip_check = database.clip.get_one(user.id, args["clip_identifier"])
+
+    if clip_check:
+        return jsonify({'error': "duplicate"}), 400
+
+    state, error = database.clip.add(user, args["clip_channel_name"], args["clip_title"], args["clip_identifier"], args["clip_thumbnail"])
 
     if not state:
         return jsonify({'state': error}), 400
@@ -122,8 +125,10 @@ def add_clip():
     return jsonify({'state': "success"}), 200
 
 @app.route('/clip/get', methods=['GET'])
-@headers(["username"])
+@session_check(database)
 def get_clip():
+
+    args = request.args
 
     taglist = []
 
@@ -134,7 +139,7 @@ def get_clip():
     except:
         limit = 25
 
-    user = database.user.get(args["username"])
+    user = database.user.get_by_id(request.cookies["user"])
 
     if not user:
         return jsonify({'error': "User error"}), 400
@@ -151,10 +156,13 @@ def get_clip():
     return jsonify({'user_id': user.id, 'user_name': user.username, 'clips': things, 'requested_amount': limit, 'substantive_amount': amount, 'state': 'success'})
 
 @app.route('/clip/remove', methods=['GET'])
-@headers(["username", "clip_identifier"])
+@session_check(database)
+@headers_check(["clip_identifier"])
 def clip_remove():
 
-    user = database.user.get(args["username"])
+    args = request.args
+
+    user = database.user.get_by_id(request.cookies["user"])
 
     if not user:
         return jsonify({'error': "User error"}), 400
@@ -175,32 +183,43 @@ def clip_remove():
     return jsonify({'state': "success"}), 200
 
 @app.route('/tag/add', methods=['GET'])
-@headers(["username", "clip_name", "tag"])
+@session_check(database)
+@headers_check(["clip_identifier", "tag"])
 def tag_add():
 
-    user = database.user.get(args["username"])
+    args = request.args
+
+    user = database.user.get_by_id(request.cookies["user"])
 
     if not user:
         return jsonify({'error': "User error"}), 400
 
-    clip = database.clip.get_one(user.id, args["clip_name"])
+    clip = database.clip.get_one(user.id, args["clip_identifier"])
 
     if not clip:
         return jsonify({'error': "Clip error"}), 400
 
+    tag_check = database.tag.get(clip.id, args["tag"])
+
+    if tag_check:
+        return jsonify({'error': 'duplicate'}), 400
+
     state, msg = database.tag.add(clip, args["tag"])
 
     if state:
-        return jsonify({'state': 'success'})
+        return jsonify({'state': 'success'}), 200
 
     else:
-        return jsonify({'error': msg})
+        return jsonify({'error': msg}), 400
 
 @app.route('/tag/remove', methods=['GET'])
-@headers(["username", "clip_identifier", "tag"])
+@session_check(database)
+@headers_check(["clip_identifier", "tag"])
 def tag_remove():
 
-    user = database.user.get(args["username"])
+    args = request.args
+
+    user = database.user.get_by_id(request.cookies["user"])
 
     if not user:
         return jsonify({'error': "User error"}), 400
@@ -219,4 +238,8 @@ def tag_remove():
         return jsonify({'error': "error"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    try:
+        app.run(debug=config.debug, host=config.app_host)
+    except KeyboardInterrupt:
+        database.close()
+        database.dispose()

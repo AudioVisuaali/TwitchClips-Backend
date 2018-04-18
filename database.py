@@ -49,14 +49,23 @@ class Database:
     def dispose(self):
         self.engine.dispose()
 
-    def brute(self):
-        self.close()
-        self.dispose()
+    def user_logged_in(self, remote_addr, user_agent, user_id, session_hash):
 
-    def user_logged_in(self):
+        user = self.user.get_by_id(user_id)
 
-        self.user.get()
-        pass
+        if not user:
+            return False, "no user"
+
+        sessions = self.sess.get(user.id)
+
+        for session in sessions:
+
+            hash_ = self.user.hash_(remote_addr + user_agent, session.session_salt)
+
+            if hash_ == session_hash:
+                return True, "active"
+
+        return False, "inactive"
 
 class User():
 
@@ -117,8 +126,10 @@ class User():
             return None
 
     def get_by_id(self, user_id):
-
-        return self.session.query(Users).filter(Users.id == user_id).one()
+        try:
+            return self.session.query(Users).filter(Users.id == user_id).one()
+        except:
+            return None
 
     def create_salt(self):
 
@@ -176,6 +187,7 @@ class Clip:
             self.session.rollback()
             return False, "Unknown"
 
+
     def get(self, user_id, limit=25, order_desc=False, channel=None, taglist=[]):
 
         order = None
@@ -198,12 +210,12 @@ class Clip:
         return thing, len(thing)
 
 
-    def get_one(self, user_id, clip_name):
+    def get_one(self, user_id, clip_identifier):
 
         try:
             return self.session.query(Clips).\
                     filter(and_(Clips.back_users.any(Users.id == user_id),
-                                Clips.clip_identifier == clip_name)).one()
+                                Clips.clip_identifier == clip_identifier)).one()
         except:
             return None
 
