@@ -1,0 +1,241 @@
+@charset "utf-8";
+/* CSS Document */
+
+/******************************
+
+[Table of Contents]
+
+1. Fonts
+2. Body and some general stuff
+3. Some more generall stuff
+4. form
+5. Logged in box
+
+30. Responsive
+
+******************************/
+
+/***********
+1. Fonts
+***********/
+
+@import url('https://fonts.googleapis.com/css?family=Quicksand');
+
+/*********************************
+2. Body and some general stuff
+*********************************/
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+}
+* {
+  -webkit-font-smoothing: antialiased;
+    -webkit-text-shadow: rgba(0,0,0,.01) 0 0 1px;
+    text-shadow: rgba(0,0,0,.01) 0 0 1px;
+}
+.trans_200 {
+	-webkit-transition: all 200ms ease;
+	-moz-transition: all 200ms ease;
+	-ms-transition: all 200ms ease;
+	-o-transition: all 200ms ease;
+	transition: all 200ms ease;
+}
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+}
+.reg {
+  background: #0080ff !important;
+}
+.log {
+  background: #ff5500 !important;
+}
+.hide {
+  display: none;
+}
+.input-field {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+/*********************************
+3. Some more generall stuff
+*********************************/
+
+.background {
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+  background: #565656;
+}
+.inner {
+  width: 100%;
+  position: absolute;
+}
+.darken {
+  background: rgba(0,0,0,0.2);
+  width: 100%;
+  height: 100vh;
+}
+video.player {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+}
+.content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 400px;
+}
+
+
+/*********************************
+4. form
+*********************************/
+
+.content .form {
+  background: white;
+  width: 100%;
+}
+
+.form .buttons {
+  width: 100%;
+  height: 80px;
+}
+.form .forms {
+  margin: 20px 10px 20px 10px;
+}
+.form .forms .row {
+  margin-bottom: 0px;
+}
+.form .register,
+.form .login {
+  text-transform: uppercase;
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+  height: 60px;
+  width: 50%;
+  color: white;
+}
+.form .bar {
+  width: 100%;
+  height: 10px;
+  background: inherit;
+}
+.buttons h5 {
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0px;
+  padding: 1px;
+}
+.form .button-holder {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.form .loggedindecision {
+  padding: 20px 0px 20px 0px;
+  text-align: center;
+}
+.form .loggedindecision span {
+  font-weight: 700;
+}
+/*********************************
+5. Logged in box
+*********************************/
+
+.form-logged-in {
+  background: #ffffff;
+  text-align: center;
+}
+.form-logged-in .forms {
+  padding: 20px 0px 20px 0px;
+}
+.form-logged-in .forms .welcome h5 {
+  margin: 10px;
+}
+.form-logged-in .forms .welcome {
+  margin: 10px 0px 30px 0px;
+}
+.form-logged-in .forms .welcome h5 span {
+  font-weight: 700;
+}
+.form-logged-in .button-holder a:first-child {
+  margin-right: 30px;
+}
+
+/*********************************
+5. Panel
+*********************************/
+
+.panel .top-bar {
+  width: 100%;
+  height: 50px;
+  background: #212121;
+}
+.panel .top-bar .logo {
+  height: 50px;
+}
+.panel .top-bar .logo h4 {
+  margin: 6px;
+  color: white;
+
+}
+.panel .top-bar .logo {
+  float: left;
+}
+.panel .top-bar .user {
+  float: right;
+  margin-right: 20px;
+}
+.panel .top-bar .user p {
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+}
+.panel .top-bar .user p i {
+  font-size: 12px;
+  margin: 0px 0px 0px 10px;
+}
+
+/*********************************
+6. Clips selector
+*********************************/
+
+.panel .clips_selector_container {
+  height: 120px;
+}
+
+.panel .clips_selector .preview_clips,
+.panel .clips_selector .add_clip {
+  cursor: pointer;
+  float: left;
+  text-align: center;
+  width: 200px;
+}
+.panel .clips_selector {
+  position: absolute;
+-webkit-transform: translate(-50%, 50%);
+  transform: translate(-50%, 50%);
+  left: 50%;
+}
+.panel .clips_selector .active {
+  border-bottom: 2px solid black;
+}
+.panel .clips_selector h3 {
+  margin: 10px 0px 20px 0px;
+}
